@@ -1,8 +1,8 @@
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
-import notesRoutes from './routes/notes';
-import { ApiError } from './utils/ApiError';
+import notesRoutes from './src/routes/notes';
+import { ApiError } from './src/utils/ApiError';
 
 const app = express();
 const port = process.env.PORT || 5000;
