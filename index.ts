@@ -1,14 +1,19 @@
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import mongoose from 'mongoose';
+import dotenv from "dotenv";
 import bodyParser from 'body-parser';
 import notesRoutes from './src/routes/notes';
+import authRoutes from './src/routes/authRoutes';
 import { ApiError } from './src/utils/ApiError';
+import { logger } from './src/middleware/logger';
 
 const app = express();
 const port = process.env.PORT || 5000;
+dotenv.config();
 
 
 app.use(bodyParser.json());
+app.use(logger);
 
 
 app.get('/', (req: Request, res: Response) => {
@@ -20,10 +25,12 @@ app.get('/api/notes', async (req, res) => {
 });
 
 app.use('/api/notes', notesRoutes);
+app.use("/api/auth", authRoutes);
 
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
 mongoose
-  .connect('mongodb+srv://infoblessingasuquo:fidelitybank@note-taking-api.f2isr.mongodb.net/?retryWrites=true&w=majority&appName=note-taking-api')
+  .connect(MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('Error connecting to MongoDB:', err));
 

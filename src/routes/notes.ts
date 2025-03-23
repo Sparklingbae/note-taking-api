@@ -1,7 +1,23 @@
 import express, { Request, Response, NextFunction } from 'express';
-import Note from '../models/note.model'; 
+import Note from '../models/note.model';
+import { validateNote } from '../middleware/validateNote';
+import { getNotes, createNote } from '../controllers/noteController';
+import  authenticateUser  from '../middleware/authMiddleware';
 
 const router = express.Router();
+
+router.get("/", authenticateUser, getNotes);
+router.post("/", authenticateUser, createNote);
+
+router.get("/categories/:categoryId", async (req: Request, res: Response) => {
+  try {
+    const { categoryId } = req.params;
+    const notes = await Note.find({ categoryId });
+    res.json(notes);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching notes by category" });
+  }
+});
 
 
 router.get('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -16,7 +32,6 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction): Prom
     next(error);
   }
 });
-
 
 router.post('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -36,6 +51,41 @@ router.post('/', async (req: Request, res: Response, next: NextFunction): Promis
   }
 });
 
+router.post("/", validateNote, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { title, content, categoryId } = req.body;
+
+    const newNote = new Note({ title, content, categoryId });
+    await newNote.save();
+
+    res.status(201).json({ message: "Note created successfully", note: newNote });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({ error: "Failed to create note", details: err.message });
+  }
+});
+
+router.put("/:id", async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { title, content, categoryId } = req.body;
+
+    const updatedNote = await Note.findByIdAndUpdate(
+      id,
+      { title, content, categoryId, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedNote) {
+     res.status(404).json({ error: "Note not found" });
+     return;
+    }
+
+    res.json(updatedNote);
+  } catch (error) {
+    res.status(500).json({ error: "Error updating note" });
+  }
+});
 
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
